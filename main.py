@@ -1,59 +1,78 @@
 import random
+from time import time
 
-episode_length = 10
-
-Q = {} # Stores the quality of each action in relation to each state
-
+population_size = 30
+episode_length = 10 # How many turns to play
 dve = 0.1 # During vs. ending reward
+training_time = 2 # How long to train per agent
 
-epsilon_counter = 1
+class Agent_Human:
+	def pick_action(self, state):
+		action = -1
 
-def get_epsilon():
-	return 1 / float(epsilon_counter)
+		print("State: " + str(state) + " (" + str(len(state)) + "/" + str(episode_length) + ")")
 
-def update_epsilon():
-	global epsilon_counter
+		while (action != 0 and action != 1):
+			try:
+				action = int(raw_input("Choose Cooperate/Defect (0/1): "))
+			except ValueError:
+				print("Please input a number.")
+		
+		return action
+	def reward_action(self, state, action, reward):
+		pass
 
-	epsilon_counter += 0.0005
+class Agent_Q:
+	def __init__(self, memory):
+		self.Q = {} # Stores the quality of each action in relation to each state
+		self.memory = memory
+		self.epsilon_counter = 1
 
-def pick_action(state):
-	if str(state) not in Q:
-		Q[str(state)] = [0, 0]
+	def pick_action(self, state):
+		self.epsilon_counter += 0.1
 
-	if Q[str(state)][0] == Q[str(state)][1] or random.random() < get_epsilon():
-		return random.randint(0, 1)
-	else:
-		if Q[str(state)][0] > Q[str(state)][1]:
-			return 0
+		if str(state[-self.memory:]) not in self.Q:
+			self.Q[str(state[-self.memory:])] = [0, 0]
+
+		if self.Q[str(state[-self.memory:])][0] == self.Q[str(state[-self.memory:])][1] or random.random() < 1 / self.epsilon_counter:
+			return random.randint(0, 1)
 		else:
-			return 1
+			if self.Q[str(state[-self.memory:])][0] > self.Q[str(state[-self.memory:])][1]:
+				return 0
+			else:
+				return 1
 
-def read_action(state):
-	action = -1
+	def reward_action(self, state, action, reward):
+		self.Q[str(state[-self.memory:])][action] += reward
 
-	print("State: " + str(state) + " (" + str(len(state)) + "/" + str(episode_length) + ")")
+population = []
 
-	while (action != 0 and action != 1):
-		try:
-			action = int(raw_input("Choose Cooperate/Defect (0/1): "))
-		except ValueError:
-			print("Please input a number.")
-	
-	return action
-
-def reward_action(state, action, reward):
-	Q[str(state)][action] += reward
+for i in range(population_size):
+	population.append(Agent_Q(random.randint(2, 5)))
 
 # Training mode
-while epsilon_counter < 10:
+start_time = time()
+remaining_time = training_time * population_size
+last_remaining_time = int(remaining_time)
+
+while remaining_time > 0:
+	remaining_time = start_time + training_time * population_size - time()
+
+	if remaining_time < last_remaining_time:
+		print("Time remaining: %.0f" % remaining_time)
+		last_remaining_time = int(remaining_time)
+
 	state1 = [] # State visible to player 1
 	state2 = [] # State visible to player 2
+
+	player1 = random.choice(population)
+	player2 = random.choice(population)
 
 	for i in range(episode_length):
 		action = None
 
-		action1 = pick_action(state1) # Select action for player 1
-		action2 = pick_action(state2) # Select action for player 2
+		action1 = player1.pick_action(state1) # Select action for player 1
+		action2 = player2.pick_action(state2) # Select action for player 2
 
 		state1.append(action2) # Log action of player 2 for player 1
 		state2.append(action1) # Log action of player 1 for player 2
@@ -85,8 +104,8 @@ while epsilon_counter < 10:
 		total_reward1 += reward1
 		total_reward2 += reward2
 
-		reward_action(state1[:i], action1, reward1 * dve) # Assign reward to action of player 1
-		reward_action(state2[:i], action2, reward2 * dve) # Assign reward to action of player 2
+		player1.reward_action(state1[:i], action1, reward1 * dve) # Assign reward to action of player 1
+		player2.reward_action(state2[:i], action2, reward2 * dve) # Assign reward to action of player 2
 
 	# Assign reward for winning player
 	if total_reward1 > total_reward2:
@@ -95,41 +114,28 @@ while epsilon_counter < 10:
 		for i in range(episode_length):
 			action1 = state2[i]
 
-			reward_action(state1[:i], action1, reward_chunk)
+			player1.reward_action(state1[:i], action1, reward_chunk)
 	elif total_reward2 > total_reward1:
 		reward_chunk = total_reward2 / episode_length * (1 - dve)
 
 		for i in range(episode_length):
 			action2 = state1[i]
 
-			reward_action(state2[:i], action2, reward_chunk)
-
-	cooperation_metric = 0
-	cooperation_max_value = 0
-	cooperation_max_state = "[]"
-
-	for key, value in Q.iteritems():
-		if value[0] > value[1]:
-			cooperation_metric += 1
-
-			if value[0] - value[1] > cooperation_max_value:
-				cooperation_max_value = value[0] - value[1]
-				cooperation_max_state = key
-
-	print("Cooperation occurs in " + str("%.3f" % (float(cooperation_metric) / len(Q) * 100)) + "% of " + str(len(Q)) + " states, highest in " + str(cooperation_max_state) + ", scoring " + str(total_reward1) + " with epsilon " + str("%.5f" % get_epsilon()))
-
-	update_epsilon()
+			player2.reward_action(state2[:i], action2, reward_chunk)
 
 # Testing mode
 while True:
 	state1 = [] # State visible to player 1
 	state2 = [] # State visible to player 2
 
+	player1 = Agent_Human()
+	player2 = random.choice(population)
+
 	for i in range(episode_length):
 		action = None
 
-		action1 = read_action(state1) # Allow player 1 to pick action
-		action2 = pick_action(state2) # Select action for player 2
+		action1 = player1.pick_action(state1) # Allow player 1 to pick action
+		action2 = player2.pick_action(state2) # Select action for player 2
 
 		state1.append(action2) # Log action of player 2 for player 1
 		state2.append(action1) # Log action of player 1 for player 2
