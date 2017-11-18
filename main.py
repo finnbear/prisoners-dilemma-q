@@ -1,10 +1,10 @@
 import random
 from time import time
 
-population_size = 30
+population_size = 20
 episode_length = 10 # How many turns to play
 dve = 0.1 # During vs. ending reward
-training_time = 2 # How long to train per agent
+training_time = 3 # How long to train per agent
 
 class Agent_Human:
 	def pick_action(self, state):
@@ -59,7 +59,7 @@ while remaining_time > 0:
 	remaining_time = start_time + training_time * population_size - time()
 
 	if remaining_time < last_remaining_time:
-		print("Time remaining: %.0f" % remaining_time)
+		print("Training time remaining: %.0f" % remaining_time)
 		last_remaining_time = int(remaining_time)
 
 	state1 = [] # State visible to player 1
