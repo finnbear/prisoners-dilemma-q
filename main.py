@@ -1,6 +1,6 @@
 import random
 
-episode_length = 20
+episode_length = 12
 
 Q = {}
 
@@ -28,14 +28,26 @@ def pick_action(state):
 		else:
 			return 1
 
+def read_action(state):
+	action = -1
+
+	print("State: " + str(state) + " (" + str(len(state)) + "/" + str(episode_length) + ")")
+
+	while (action != 0 and action != 1):
+		try:
+			action = int(raw_input("Choose Cooperate/Defect (0/1): "))
+		except ValueError:
+			print("Please input a number.")
+	
+	return action
+
 def reward_action(state, action, reward):
 	Q[str(state)][action] += reward
 
-while True:
+# Training mode
+while epsilon_counter < 5:
 	state1 = [] # State visible to player 1
 	state2 = [] # State visible to player 2
-
-	actions = [] # History of all actions
 
 	for i in range(episode_length):
 		action = None
@@ -107,3 +119,53 @@ while True:
 	print("Cooperation occurs in " + str("%.3f" % (float(cooperation_metric) / len(Q) * 100)) + "% of " + str(len(Q)) + " states, highest in " + str(cooperation_max_state) + ", scoring " + str(total_reward1) + " with epsilon " + str("%.5f" % get_epsilon()))
 
 	update_epsilon()
+
+# Testing mode
+while epsilon_counter < 10:
+	state1 = [] # State visible to player 1
+	state2 = [] # State visible to player 2
+
+	for i in range(episode_length):
+		action = None
+
+		action1 = read_action(state1) # Allow player 1 to pick action
+		action2 = pick_action(state2) # Select action for player 2
+
+		state1.append(action2) # Log action of player 2 for player 1
+		state2.append(action1) # Log action of player 1 for player 2
+
+	total_reward1 = 0
+	total_reward2 = 0
+
+	for i in range(episode_length):
+		action1 = state2[i]
+		action2 = state1[i]
+
+		reward1 = 0 # Total reward due to the actions of player 1 in the entire episode
+		reward2 = 0 # Total reward due to the actions of player 2 in the entire episode
+
+		# Calculate rewards for each player
+		if action1 == 0 and action2 == 0: # Both players cooperate
+			reward1 = 1
+			reward2 = 1
+		elif action1 == 0 and action2 == 1: # Only player 2 defects
+			reward1 = 0
+			reward2 = 5
+		elif action1 == 1 and action2 == 1: # Both players defect
+			reward1 = 3
+			reward2 = 3
+		elif action1 == 1 and action2 == 0: # Only player 1 defects
+			reward1 = 5
+			reward2 = 0
+
+		total_reward1 += reward1
+		total_reward2 += reward2
+
+	# Print the winning player and score
+	print("Score: " + str(total_reward1) + " to " + str(total_reward2))
+	if total_reward1 > total_reward2:
+		print("You win!")
+	elif total_reward2 > total_reward1:
+		print("You lose!")
+	else:
+		print("Tie!")
