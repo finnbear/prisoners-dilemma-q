@@ -29,7 +29,7 @@ class Agent_Q:
 		self.epsilon_counter = 1
 
 	def pick_action(self, state):
-		self.epsilon_counter += 0.1
+		self.epsilon_counter += 0.25
 
 		if str(state[-self.memory:]) not in self.Q:
 			self.Q[str(state[-self.memory:])] = [0, 0]
