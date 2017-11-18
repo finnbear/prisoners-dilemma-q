@@ -45,7 +45,7 @@ def reward_action(state, action, reward):
 	Q[str(state)][action] += reward
 
 # Training mode
-while epsilon_counter < 5:
+while epsilon_counter < 10:
 	state1 = [] # State visible to player 1
 	state2 = [] # State visible to player 2
 
@@ -121,7 +121,7 @@ while epsilon_counter < 5:
 	update_epsilon()
 
 # Testing mode
-while epsilon_counter < 10:
+while True:
 	state1 = [] # State visible to player 1
 	state2 = [] # State visible to player 2
 
@@ -146,16 +146,16 @@ while epsilon_counter < 10:
 
 		# Calculate rewards for each player
 		if action1 == 0 and action2 == 0: # Both players cooperate
-			reward1 = 1
-			reward2 = 1
+			reward1 = 2
+			reward2 = 2
 		elif action1 == 0 and action2 == 1: # Only player 2 defects
 			reward1 = 0
-			reward2 = 5
+			reward2 = 4
 		elif action1 == 1 and action2 == 1: # Both players defect
-			reward1 = 3
-			reward2 = 3
+			reward1 = 1
+			reward2 = 1
 		elif action1 == 1 and action2 == 0: # Only player 1 defects
-			reward1 = 5
+			reward1 = 4
 			reward2 = 0
 
 		total_reward1 += reward1
