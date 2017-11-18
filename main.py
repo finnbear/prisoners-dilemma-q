@@ -1,10 +1,10 @@
 import random
 
-episode_length = 12
+episode_length = 10
 
-Q = {}
+Q = {} # Stores the quality of each action in relation to each state
 
-gamma = 0.25
+dve = 0.1 # During vs. ending reward
 
 epsilon_counter = 1
 
@@ -85,19 +85,19 @@ while epsilon_counter < 10:
 		total_reward1 += reward1
 		total_reward2 += reward2
 
-		reward_action(state1[:i], action1, reward1) # Assign reward to action of player 1
-		reward_action(state2[:i], action2, reward2) # Assign reward to action of player 2
+		reward_action(state1[:i], action1, reward1 * dve) # Assign reward to action of player 1
+		reward_action(state2[:i], action2, reward2 * dve) # Assign reward to action of player 2
 
 	# Assign reward for winning player
 	if total_reward1 > total_reward2:
-		reward_chunk = int(total_reward1 / episode_length * gamma)
+		reward_chunk = total_reward1 / episode_length * (1 - dve)
 
 		for i in range(episode_length):
 			action1 = state2[i]
 
 			reward_action(state1[:i], action1, reward_chunk)
 	elif total_reward2 > total_reward1:
-		reward_chunk = int(total_reward2 / episode_length * gamma)
+		reward_chunk = total_reward2 / episode_length * (1 - dve)
 
 		for i in range(episode_length):
 			action2 = state1[i]
