@@ -2,10 +2,12 @@ import random
 from time import time
 
 population_size = 20
+mentors_size = 5
 episode_length = 10 # How many turns to play
 dve = 0.1 # During vs. ending reward
-training_time = 3 # How long to train per agent
+training_time = 6 # How long to train per agent
 
+# Human agents pick which action to perform
 class Agent_Human:
 	def pick_action(self, state):
 		action = -1
@@ -22,6 +24,7 @@ class Agent_Human:
 	def reward_action(self, state, action, reward):
 		pass
 
+# Q agents learn the best action to perform for every state encountered
 class Agent_Q:
 	def __init__(self, memory):
 		self.Q = {} # Stores the quality of each action in relation to each state
@@ -45,10 +48,34 @@ class Agent_Q:
 	def reward_action(self, state, action, reward):
 		self.Q[str(state[-self.memory:])][action] += reward
 
+# Defined agents know which action to perform
+class Agent_Defined:
+	def __init__(self, strategy):
+		self.strategy = strategy
+
+	def pick_action(self, state):
+		if (self.strategy == 0):
+			if len(state) == 0:
+				return 0
+			else:
+				return state[-1]
+		elif (self.strategy == 1):
+			if 1 in state:
+				return 1
+			else:
+				return 0
+
+	def reward_action(self, state, action, reward):
+		pass
+
 population = []
+mentors = []
 
 for i in range(population_size):
 	population.append(Agent_Q(random.randint(2, 5)))
+
+for i in range(mentors_size):
+	mentors.append(Agent_Defined(random.randint(0, 1)))
 
 # Training mode
 start_time = time()
@@ -58,7 +85,7 @@ last_remaining_time = int(remaining_time)
 while remaining_time > 0:
 	remaining_time = start_time + training_time * population_size - time()
 
-	if remaining_time < last_remaining_time:
+	if 0 < remaining_time < last_remaining_time:
 		print("Training time remaining: %.0f" % remaining_time)
 		last_remaining_time = int(remaining_time)
 
@@ -66,7 +93,7 @@ while remaining_time > 0:
 	state2 = [] # State visible to player 2
 
 	player1 = random.choice(population)
-	player2 = random.choice(population)
+	player2 = random.choice(population + mentors)
 
 	for i in range(episode_length):
 		action = None
