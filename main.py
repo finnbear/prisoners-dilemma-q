@@ -1,23 +1,36 @@
-import random
-from time import time
-
-population_size = 20
-mentors_size = 5
+# Configuration section
+population_size = 15 # How many AIs in the population
+mentor_instances = 2 # How many instances of each defined strategy there are
 episode_length = 10 # How many turns to play
 dve = 0.1 # During vs. ending reward
-training_time = 6 # How long to train per agent
+training_time = 4 # How long to train in seconds per agent
+
+# Prisoner's dillema rewards [Player 1 reward, Player 2 reward]
+reward_matrix = [[[3, 3], # Both players cooperate
+				[0, 5], # Player 1 cooperates, player 2 defects
+				[5, 0], # Player 1 defects, player 2 cooperates
+				[1, 1]]] # Both players defect
+
+# Script section
+import sys
+import random
+from time import time
 
 # Human agents pick which action to perform
 class Agent_Human:
 	def pick_action(self, state):
 		action = -1
 
+		# Print the given state
 		print("State: " + str(state) + " (" + str(len(state)) + "/" + str(episode_length) + ")")
 
-		while (action != 0 and action != 1):
+		# Repeat until valid input provided
+		while (action not in [0, 1]):
 			try:
+				# Parse human's chosen action
 				action = int(raw_input("Choose Cooperate/Defect (0/1): "))
 			except ValueError:
+				# Prompt human for valid input
 				print("Please input a number.")
 		
 		return action
@@ -28,25 +41,35 @@ class Agent_Human:
 class Agent_Q:
 	def __init__(self, memory):
 		self.Q = {} # Stores the quality of each action in relation to each state
-		self.memory = memory
-		self.epsilon_counter = 1
+		self.memory = memory # The number of previous states the agent can factor into its decision
+		self.epsilon_counter = 1 # Inversely related to learning rate
 
 	def pick_action(self, state):
+		# Decrease learning rate
 		self.epsilon_counter += 0.25
 
+		# If the given state was never previously encounted
 		if str(state[-self.memory:]) not in self.Q:
+			# Initialize it with zeros
 			self.Q[str(state[-self.memory:])] = [0, 0]
 
+		# If the qualies of both actions match or exploration occurs
 		if self.Q[str(state[-self.memory:])][0] == self.Q[str(state[-self.memory:])][1] or random.random() < 1 / self.epsilon_counter:
+			# Pick a random action
 			return random.randint(0, 1)
 		else:
+			# Pick the action with the highest quality
 			if self.Q[str(state[-self.memory:])][0] > self.Q[str(state[-self.memory:])][1]:
 				return 0
 			else:
 				return 1
 
 	def reward_action(self, state, action, reward):
+		# Increase the quality of the given action at the given state
 		self.Q[str(state[-self.memory:])][action] += reward
+
+	def analyse():
+		pass # TODO
 
 # Defined agents know which action to perform
 class Agent_Defined:
@@ -55,44 +78,58 @@ class Agent_Defined:
 
 	def pick_action(self, state):
 		if (self.strategy == 0): # Tit for tat
-			if len(state) == 0:
-				return 0
-			else:
-				return state[-1]
+			if len(state) == 0: # On the first tern
+				return 0 # Cooperate
+			else: # Otherwise
+				return state[-1] # Pick the last action of the opponent
 		elif (self.strategy == 1): # Holds a grudge
-			if 1 in state:
-				return 1
-			else:
-				return 0
+			if 1 in state: # If the enemy has ever defected
+				return 1 # Defect
+			else: # Otherwise
+				return 0 # Cooperate
 
 	def reward_action(self, state, action, reward):
-		pass
+		pass # Since these agents are defined, no learning occurs
 
+# Stores all AIs
 population = []
+
+# Stores all instances of defined strategies
 mentors = []
 
+# Create a random AI with a random amount of memory
 for i in range(population_size):
 	population.append(Agent_Q(random.randint(2, 5)))
 
-for i in range(mentors_size):
-	mentors.append(Agent_Defined(random.randint(0, 1)))
+# Create instances of defined strategies
+for i in range(2): # Number of defined strategies
+	for j in range(mentor_instances):
+		mentors.append(Agent_Defined(i))
 
-# Training mode
+# Training time initialization
 start_time = time()
 remaining_time = training_time * population_size
 last_remaining_time = int(remaining_time)
 
+# Training mode with AIs
 while remaining_time > 0:
+	# Calculate remaining training time
 	remaining_time = start_time + training_time * population_size - time()
 
+	# Alert user to remaining training time
 	if 0 < remaining_time < last_remaining_time:
-		print("Training time remaining: %.0f" % remaining_time)
+		sys.stdout.write('\r')
+		sys.stdout.write("Training time remaining: %.0f" % remaining_time)
+		sys.stdout.flush()
 		last_remaining_time = int(remaining_time)
 
-	state1 = [] # State visible to player 1
-	state2 = [] # State visible to player 2
+	state1 = [] # State visible to player 1 (actions of player 2)
+	state2 = [] # State visible to player 2 (actions of player 1)
 
+	# Pick a random member of the population to serve as player 1
 	player1 = random.choice(population)
+
+	# Pick a random member of the population or a defined strategy to serve as player 2
 	player2 = random.choice(population + mentors)
 
 	for i in range(episode_length):
@@ -104,6 +141,7 @@ while remaining_time > 0:
 		state1.append(action2) # Log action of player 2 for player 1
 		state2.append(action1) # Log action of player 1 for player 2
 
+	# Stores the total reward over all games in an episode
 	total_reward1 = 0
 	total_reward2 = 0
 
@@ -116,17 +154,17 @@ while remaining_time > 0:
 
 		# Calculate rewards for each player
 		if action1 == 0 and action2 == 0: # Both players cooperate
-			reward1 = 1
-			reward2 = 1
+			reward1 = reward_matrix[0][0][0]
+			reward2 = reward_matrix[0][0][1]
 		elif action1 == 0 and action2 == 1: # Only player 2 defects
-			reward1 = 0
-			reward2 = 5
-		elif action1 == 1 and action2 == 1: # Both players defect
-			reward1 = 3
-			reward2 = 3
+			reward1 = reward_matrix[0][1][0]
+			reward2 = reward_matrix[0][1][1]
 		elif action1 == 1 and action2 == 0: # Only player 1 defects
-			reward1 = 5
-			reward2 = 0
+			reward1 = reward_matrix[0][2][0]
+			reward2 = reward_matrix[0][2][1]
+		elif action1 == 1 and action2 == 1: # Both players defect
+			reward1 = reward_matrix[0][3][0]
+			reward2 = reward_matrix[0][3][1]
 
 		total_reward1 += reward1
 		total_reward2 += reward2
@@ -150,12 +188,15 @@ while remaining_time > 0:
 
 			player2.reward_action(state2[:i], action2, reward_chunk)
 
-# Testing mode
+# Testing mode with human
 while True:
-	state1 = [] # State visible to player 1
-	state2 = [] # State visible to player 2
+	state1 = [] # State visible to player 1 (actions of player 2)
+	state2 = [] # State visible to player 2 (actions of player 1)
 
+	# Use a human to serve as player 1
 	player1 = Agent_Human()
+
+	# Use a random AI to serve as player 2
 	player2 = random.choice(population)
 
 	for i in range(episode_length):
@@ -179,17 +220,20 @@ while True:
 
 		# Calculate rewards for each player
 		if action1 == 0 and action2 == 0: # Both players cooperate
-			reward1 = 2
-			reward2 = 2
+			reward1 = reward_matrix[0][0][0]
+			reward2 = reward_matrix[0][0][1]
 		elif action1 == 0 and action2 == 1: # Only player 2 defects
-			reward1 = 0
-			reward2 = 4
-		elif action1 == 1 and action2 == 1: # Both players defect
-			reward1 = 1
-			reward2 = 1
+			reward1 = reward_matrix[0][1][0]
+			reward2 = reward_matrix[0][1][1]
 		elif action1 == 1 and action2 == 0: # Only player 1 defects
-			reward1 = 4
-			reward2 = 0
+			reward1 = reward_matrix[0][2][0]
+			reward2 = reward_matrix[0][2][1]
+		elif action1 == 1 and action2 == 1: # Both players defect
+			reward1 = reward_matrix[0][3][0]
+			reward2 = reward_matrix[0][3][1]
+
+		print("1: " + str(reward1))
+		print("2: " + str(reward2))
 
 		total_reward1 += reward1
 		total_reward2 += reward2
