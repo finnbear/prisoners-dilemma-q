@@ -54,12 +54,12 @@ class Agent_Defined:
 		self.strategy = strategy
 
 	def pick_action(self, state):
-		if (self.strategy == 0):
+		if (self.strategy == 0): # Tit for tat
 			if len(state) == 0:
 				return 0
 			else:
 				return state[-1]
-		elif (self.strategy == 1):
+		elif (self.strategy == 1): # Holds a grudge
 			if 1 in state:
 				return 1
 			else:
