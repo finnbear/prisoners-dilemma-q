@@ -119,6 +119,7 @@ while remaining_time > 0:
 	# Alert user to remaining training time
 	if 0 < remaining_time < last_remaining_time:
 		sys.stdout.write('\r')
+		sys.stdout.flush()
 		sys.stdout.write("Training time remaining: %.0f" % remaining_time)
 		sys.stdout.flush()
 		last_remaining_time = int(remaining_time)
@@ -188,6 +189,9 @@ while remaining_time > 0:
 
 			player2.reward_action(state2[:i], action2, reward_chunk)
 
+# Start new line
+print("")
+
 # Testing mode with human
 while True:
 	state1 = [] # State visible to player 1 (actions of player 2)
@@ -231,9 +235,6 @@ while True:
 		elif action1 == 1 and action2 == 1: # Both players defect
 			reward1 = reward_matrix[0][3][0]
 			reward2 = reward_matrix[0][3][1]
-
-		print("1: " + str(reward1))
-		print("2: " + str(reward2))
 
 		total_reward1 += reward1
 		total_reward2 += reward2
