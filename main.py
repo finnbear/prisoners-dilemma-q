@@ -1,5 +1,5 @@
 # Configuration section
-population_size = 10 # How many AIs in the population
+population_size = 30 # How many AIs in the population
 mentor_instances = 1 # How many instances of each defined strategy there are
 episode_length = 10 # How many turns to play
 dve = 0.7 # During vs. ending reward
@@ -102,11 +102,11 @@ class Agent_Q:
         # What percentage of games resulted in victory/defeat
         percent_to_win = 0
         if self.wins > 0:
-            percent_to_win = (self.wins + self.losses) / float(self.wins)
+            percent_to_win = float(self.wins) / (self.wins + self.losses)
         
         percent_to_lose = 0
         if self.losses > 0:
-            percent_to_lose = (self.wins + self.losses) / float(self.losses)
+            percent_to_lose = float(self.losses) / (self.wins + self.losses)
 
         # How many states will result in cooperation/defection
         times_to_cooperate = 0
@@ -123,11 +123,11 @@ class Agent_Q:
         # What percentage of states will result in cooperation/defection
         percent_to_cooperate = 0
         if times_to_cooperate > 0:
-            percent_to_cooperate = len(self.Q) / float(times_to_cooperate)
+            percent_to_cooperate = float(times_to_cooperate) / len(self.Q)
 
         percent_to_defect = 0
         if times_to_defect > 0:
-            percent_to_defect = len(self.Q) / float(times_to_defect)
+            percent_to_defect = float(times_to_defect) / len(self.Q)
 
         # Return most relevant analysis
         return self.wins, percent_to_win, percent_to_cooperate
@@ -168,11 +168,11 @@ class Agent_Defined:
         # What percentage of games resulted in victory/defeat
         percent_to_win = 0
         if self.wins > 0:
-            percent_to_win = (self.wins + self.losses) / float(self.wins)
+            percent_to_win = float(self.wins) / (self.wins + self.losses)
         
         percent_to_lose = 0
         if self.losses > 0:
-            percent_to_lose = (self.wins + self.losses) / float(self.losses)
+            percent_to_lose = float(self.losses) / (self.wins + self.losses)
 
         # Return most relevant analysis
         return self.wins, percent_to_win
@@ -317,7 +317,7 @@ for timestep in population_analysis:
     total_wins = 0
 
     for agent_analysis in timestep:
-        wins, percent_to_win, percent_to_cooperate = agent_analysis
+        wins, percent_to_win, percent_to_cooperate = agent_analysis    
 
         total_wins += percent_to_win
 
@@ -330,6 +330,7 @@ for timestep in population_analysis:
             victories_percent = float(percent_to_win) / total_wins
 
         victories_percent_stack_y[j].append(victories_percent)
+
         j += 1
 
     i += 1
