@@ -62,7 +62,7 @@ class Agent_Q:
 
         normalization = min(quality1, quality2)
 
-        self.set_Q(state, (quality1 - normalization) * 0.9, (quality2 - normalization) * 0.9)
+        self.set_Q(state, (quality1 - normalization) * 0.95, (quality2 - normalization) * 0.95)
 
     def max_Q(self, state):
         quality1, quality2 = self.get_Q(state)
@@ -302,9 +302,13 @@ print("")
 # Plot analysis of AIs
 victories_percent_stack_x = []
 victories_percent_stack_y = []
+victories_percent_stack_colors = []
 
-for i in range(len(population_analysis[0])):
+for i in range(len(population_analysis[-1])):
     victories_percent_stack_y.append([])
+
+    wins, percent_to_win, percent_to_cooperate = population_analysis[-1][i]
+    victories_percent_stack_colors.append(str(percent_to_cooperate))
 
 i = 0
 for timestep in population_analysis:
@@ -320,15 +324,17 @@ for timestep in population_analysis:
     j = 0
     for agent_analysis in timestep:
         wins, percent_to_win, percent_to_cooperate = agent_analysis
+
         victories_percent = 0
         if wins > 0:
             victories_percent = float(percent_to_win) / total_wins
+
         victories_percent_stack_y[j].append(victories_percent)
         j += 1
 
     i += 1
 
-plt.stackplot(victories_percent_stack_x, victories_percent_stack_y)
+plt.stackplot(victories_percent_stack_x, victories_percent_stack_y, colors=victories_percent_stack_colors)
 plt.show()
 
 # Testing mode with human
