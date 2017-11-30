@@ -3,13 +3,12 @@ population_size = 10 # How many AIs in the population
 mentor_instances = 1 # How many instances of each defined strategy there are
 episode_length = 10 # How many turns to play
 dve = 0.7 # During vs. ending reward
-training_time = 6 # How long to train in seconds per agent
-normalization_threshhold = 100 # How much difference in quality is too much
+training_time = 2 # How long to train in seconds per agent
 
 # Prisoner's dillema rewards [Player 1 reward, Player 2 reward]
-reward_matrix = [[[3, 3], # Both players cooperate
-                [0, 5], # Player 1 cooperates, player 2 defects
-                [5, 0], # Player 1 defects, player 2 cooperates
+reward_matrix = [[[2, 2], # Both players cooperate
+                [0, 3], # Player 1 cooperates, player 2 defects
+                [3, 0], # Player 1 defects, player 2 cooperates
                 [1, 1]]] # Both players defect
 
 # Script section
@@ -55,16 +54,15 @@ class Agent_Q:
         return quality1, quality2
 
     def set_Q(self, state, quality1, quality2):
-        self.Q[str(state[-self.memory:])][0] = quality2
+        self.Q[str(state[-self.memory:])][0] = quality1
         self.Q[str(state[-self.memory:])][1] = quality2
 
     def normalize_Q(self, state):
         quality1, quality2 = self.get_Q(state)
 
-        difference = abs(quality1 - quality2)
+        normalization = min(quality1, quality2)
 
-        if difference > normalization_threshhold:
-            self.set_Q(state, int(quality1 - (difference - normalization_threshhold)), int(quality2 - (difference -normalization_threshhold)))
+        self.set_Q(state, (quality1 - normalization) * 0.9, (quality2 - normalization) * 0.9)
 
     def max_Q(self, state):
         quality1, quality2 = self.get_Q(state)
@@ -214,9 +212,9 @@ while remaining_time > 0:
         # Alert user to remaining time
         sys.stdout.write('\r')
         sys.stdout.flush()
-        sys.stdout.write("Training time remaining: %.0f " % remaining_time)
+        sys.stdout.write("Training time remaining: %.1f " % remaining_time)
         sys.stdout.flush()
-        last_remaining_time = int(remaining_time)
+        last_remaining_time = int(remaining_time * 2) / float(2)
 
         # Analyse population
         timestep = []
@@ -317,14 +315,14 @@ for timestep in population_analysis:
     for agent_analysis in timestep:
         wins, percent_to_win, percent_to_cooperate = agent_analysis
 
-        total_wins += wins
+        total_wins += percent_to_win
 
     j = 0
     for agent_analysis in timestep:
         wins, percent_to_win, percent_to_cooperate = agent_analysis
         victories_percent = 0
         if wins > 0:
-            victories_percent = float(wins) / total_wins
+            victories_percent = float(percent_to_win) / total_wins
         victories_percent_stack_y[j].append(victories_percent)
         j += 1
 
