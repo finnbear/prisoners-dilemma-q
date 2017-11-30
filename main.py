@@ -120,7 +120,7 @@ while remaining_time > 0:
 	if 0 < remaining_time < last_remaining_time:
 		sys.stdout.write('\r')
 		sys.stdout.flush()
-		sys.stdout.write("Training time remaining: %.0f" % remaining_time)
+		sys.stdout.write("Training time remaining: %.0f " % remaining_time)
 		sys.stdout.flush()
 		last_remaining_time = int(remaining_time)
 
