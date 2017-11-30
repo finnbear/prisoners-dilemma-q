@@ -1,9 +1,9 @@
 # Configuration section
-population_size = 30 # How many AIs in the population
+population_size = 6 # How many AIs in the population
 mentor_instances = 1 # How many instances of each defined strategy there are
 episode_length = 10 # How many turns to play
 dve = 0.7 # During vs. ending reward
-training_time = 2 # How long to train in seconds per agent
+training_time = 1 # How long to train in seconds per agent
 
 # Prisoner's dillema rewards [Player 1 reward, Player 2 reward]
 reward_matrix = [[[2, 2], # Both players cooperate
@@ -217,11 +217,12 @@ while remaining_time > 0:
         last_remaining_time = int(remaining_time * 2) / float(2)
 
         # Analyse population
-        timestep = []
-        for agent in population:
-            timestep.append(agent.analyse())
-            agent.reset_analysis()
-        population_analysis.append(timestep)
+        if time() > start_time + 0.5:
+            timestep = []
+            for agent in population:
+                timestep.append(agent.analyse())
+                agent.reset_analysis()
+            population_analysis.append(timestep)
 
         # TODO: Analyse mentors
 
@@ -335,7 +336,17 @@ for timestep in population_analysis:
 
     i += 1
 
-plt.stackplot(victories_percent_stack_x, victories_percent_stack_y, colors=victories_percent_stack_colors)
+fig = plt.figure()
+
+ax1 = fig.add_subplot(121)
+
+ax1.stackplot(victories_percent_stack_x, victories_percent_stack_y, colors=victories_percent_stack_colors)
+
+ax2 = fig.add_subplot(122)
+
+for i in range(len(victories_percent_stack_y)):
+    ax2.plot(victories_percent_stack_x, victories_percent_stack_y[i], c=victories_percent_stack_colors[i], linewidth=8, alpha=0.95)
+
 plt.show()
 
 # Testing mode with human
