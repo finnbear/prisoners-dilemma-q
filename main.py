@@ -366,24 +366,36 @@ for time_step in population_analysis:
 
     i += 1
 
-fig = plt.figure()
+fig = plt.figure(figsize=(12, 10), dpi=80)
 
 # Row 1
 ax1 = fig.add_subplot(221)
+ax1.set_title("% of Victories")
+ax1.set_xlabel("Time")
+ax1.set_ylabel("Victories")
 
 ax1.stackplot(victories_percent_x, victories_percent_y, colors=row1_colors)
 
 ax2 = fig.add_subplot(222)
+ax2.set_title("% of Victories")
+ax2.set_xlabel("Time")
+ax2.set_ylabel("Victories")
 
 for i in range(len(victories_percent_y)):
     ax2.plot(victories_percent_x, victories_percent_y[i], c=row1_colors[i], linewidth=3, alpha=0.9)
 
 # Row 2
 ax3 = fig.add_subplot(223)
+ax3.set_title("% of Victories (Normalized cooperation)")
+ax3.set_xlabel("Time")
+ax3.set_ylabel("Victories")
 
 ax3.stackplot(victories_percent_x, victories_percent_y, colors=row2_colors)
 
 ax4 = fig.add_subplot(224)
+ax4.set_title("% of Victories (Normalized cooperation)")
+ax4.set_xlabel("Time")
+ax4.set_ylabel("Victories")
 
 for i in range(len(victories_percent_y)):
     ax4.plot(victories_percent_x, victories_percent_y[i], c=row2_colors[i], linewidth=3, alpha=0.9)
