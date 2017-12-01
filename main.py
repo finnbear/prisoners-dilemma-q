@@ -210,18 +210,18 @@ for i in range(2): # Number of defined strategies
 start_time = time()
 remaining_time = training_time * population_size
 last_remaining_time = int(remaining_time)
+total_training_time = training_time * population_size
 
 # Training mode with AIs
 while remaining_time > 0:
     # Calculate remaining training time
-    remaining_time = start_time + training_time * population_size - time()
+    remaining_time = start_time + total_training_time - time()
 
     # Things to be done every second
-    if 0 < remaining_time < last_remaining_time:
+    if 0 <= remaining_time < last_remaining_time:
         # Alert user to remaining time
-        sys.stdout.write('\r')
-        sys.stdout.flush()
-        sys.stdout.write("Training time remaining: %.1f " % remaining_time)
+        progress = 100 * (total_training_time - remaining_time) / total_training_time
+        sys.stdout.write('\rTraining [{0}] {1}%'.format(('#' * int(progress / 5)).ljust(19), int(min(100, progress + 5))))
         sys.stdout.flush()
         last_remaining_time = int(remaining_time * 2) / float(2)
 
