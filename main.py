@@ -388,6 +388,8 @@ ax4 = fig.add_subplot(224)
 for i in range(len(victories_percent_y)):
     ax4.plot(victories_percent_x, victories_percent_y[i], c=row2_colors[i], linewidth=3, alpha=0.9)
 
+fig.savefig("figure.png")
+
 plt.show()
 
 # Testing mode
