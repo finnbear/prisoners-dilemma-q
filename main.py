@@ -16,7 +16,6 @@ reward_matrix = [[[2, 2], # Both players cooperate
 import sys
 import random
 from time import time
-import numpy
 from matplotlib import pyplot as plt
 
 # Human agents pick which action to perform
