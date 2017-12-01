@@ -4,6 +4,7 @@ mentor_instances = 1 # How many instances of each defined strategy there are
 episode_length = 10 # How many turns to play
 dve = 0.7 # During vs. ending reward
 training_time = 1 # How long to train in seconds per agent
+testing_episodes = 1000 # How many episodes to play during the testing phase
 
 # Prisoner's dillema rewards [Player 1 reward, Player 2 reward]
 reward_matrix = [[[2, 2], # Both players cooperate
@@ -160,6 +161,8 @@ class AgentDefined:
                 return 1 # Defect
             else: # Otherwise
                 return 0 # Cooperate
+        elif self.strategy == 2: # Random
+            return random.randint(0, 1)
 
     def reward_action(self, state, action, reward):
         pass # Since these agents are defined, no learning occurs
@@ -392,15 +395,15 @@ plt.show()
 wins1 = 0
 wins2 = 0
 
-while True:
+for i in range(testing_episodes):
     state1 = [] # State visible to player 1 (actions of player 2)
     state2 = [] # State visible to player 2 (actions of player 1)
 
     # Use a human to serve as player 1
-    player1 = AgentHuman()
+    player1 = random.choice(population)
 
     # Use a random AI to serve as player 2
-    player2 = random.choice(population)
+    player2 = random.choice(mentors)
 
     for i in range(episode_length):
         action1 = player1.pick_action(state1) # Allow player 1 to pick action
@@ -443,6 +446,9 @@ while True:
         wins1 += 1
     elif total_reward2 > total_reward1:
         print("Player 2 wins!")
-        wins2 += 2
+        wins2 += 1
     else:
         print("Tie!")
+
+print("Player 1 won " + str(wins1) + " times")
+print("Player 2 won " + str(wins2) + " times")
