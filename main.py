@@ -1,5 +1,5 @@
 # Configuration section
-population_size = 6 # How many AIs in the population
+population_size = 10 # How many AIs in the population
 mentor_instances = 1 # How many instances of each defined strategy there are
 episode_length = 10 # How many turns to play
 dve = 0.7 # During vs. ending reward
@@ -15,10 +15,11 @@ reward_matrix = [[[2, 2], # Both players cooperate
 import sys
 import random
 from time import time
+import numpy
 from matplotlib import pyplot as plt
 
 # Human agents pick which action to perform
-class Agent_Human:
+class AgentHuman:
     def pick_action(self, state):
         action = -1
 
@@ -26,20 +27,21 @@ class Agent_Human:
         print("State: " + str(state) + " (" + str(len(state)) + "/" + str(episode_length) + ")")
 
         # Repeat until valid input provided
-        while (action not in [0, 1]):
+        while action not in [0, 1]:
             try:
                 # Parse human's chosen action
-                action = int(raw_input("Choose Cooperate/Defect (0/1): "))
+                action = int(input("Choose Cooperate/Defect (0/1): "))
             except ValueError:
                 # Prompt human for valid input
                 print("Please input a number.")
         
         return action
+
     def reward_action(self, state, action, reward):
         pass
 
 # Q agents learn the best action to perform for every state encountered
-class Agent_Q:
+class AgentQ:
     def __init__(self, memory):
         self.wins = 0 # Number of times agent has won an episode
         self.losses = 0 # Number of times agent has lost an episode
@@ -47,25 +49,25 @@ class Agent_Q:
         self.memory = memory # The number of previous states the agent can factor into its decision
         self.epsilon_counter = 1 # Inversely related to learning rate
 
-    def get_Q(self, state):
+    def get_q(self, state):
         quality1 = self.Q[str(state[-self.memory:])][0]
         quality2 = self.Q[str(state[-self.memory:])][1]
 
         return quality1, quality2
 
-    def set_Q(self, state, quality1, quality2):
+    def set_q(self, state, quality1, quality2):
         self.Q[str(state[-self.memory:])][0] = quality1
         self.Q[str(state[-self.memory:])][1] = quality2
 
-    def normalize_Q(self, state):
-        quality1, quality2 = self.get_Q(state)
+    def normalize_q(self, state):
+        quality1, quality2 = self.get_q(state)
 
         normalization = min(quality1, quality2)
 
-        self.set_Q(state, (quality1 - normalization) * 0.95, (quality2 - normalization) * 0.95)
+        self.set_q(state, (quality1 - normalization) * 0.95, (quality2 - normalization) * 0.95)
 
-    def max_Q(self, state):
-        quality1, quality2 = self.get_Q(state)
+    def max_q(self, state):
+        quality1, quality2 = self.get_q(state)
 
         if quality1 == quality2 or random.random() < (1 / self.epsilon_counter):
             return random.randint(0, 1)
@@ -78,19 +80,19 @@ class Agent_Q:
         # Decrease learning rate
         self.epsilon_counter += 0.5
 
-        # If the given state was never previously encounted
+        # If the given state was never previously encountered
         if str(state[-self.memory:]) not in self.Q:
             # Initialize it with zeros
             self.Q[str(state[-self.memory:])] = [0, 0]
     
-        return self.max_Q(state)
+        return self.max_q(state)
 
     def reward_action(self, state, action, reward):
         # Increase the quality of the given action at the given state
         self.Q[str(state[-self.memory:])][action] += reward
 
         # Normalize the Q matrix
-        self.normalize_Q(state)
+        self.normalize_q(state)
 
     def mark_victory(self):
         self.wins += 1
@@ -100,44 +102,48 @@ class Agent_Q:
 
     def analyse(self):
         # What percentage of games resulted in victory/defeat
-        percent_to_win = 0
+        percent_won = 0
         if self.wins > 0:
-            percent_to_win = float(self.wins) / (self.wins + self.losses)
+            percent_won = float(self.wins) / (self.wins + self.losses)
         
-        percent_to_lose = 0
+        '''
+        percent_lost = 0
         if self.losses > 0:
-            percent_to_lose = float(self.losses) / (self.wins + self.losses)
+            percent_lost = float(self.losses) / (self.wins + self.losses)
+        '''
 
         # How many states will result in cooperation/defection
-        times_to_cooperate = 0
-        times_to_defect = 0
+        times_cooperated = 0
+        times_defected = 0
 
         for state in self.Q:
-            action = self.max_Q(eval(state))
+            action = self.max_q(eval(state))
 
             if action == 0:
-                times_to_cooperate += 1
+                times_cooperated += 1
             else:
-                times_to_defect += 1
+                times_defected += 1
 
         # What percentage of states will result in cooperation/defection
-        percent_to_cooperate = 0
-        if times_to_cooperate > 0:
-            percent_to_cooperate = float(times_to_cooperate) / len(self.Q)
+        percent_cooperated = 0
+        if times_cooperated > 0:
+            percent_cooperated = float(times_cooperated) / len(self.Q)
 
-        percent_to_defect = 0
-        if times_to_defect > 0:
-            percent_to_defect = float(times_to_defect) / len(self.Q)
+        '''
+        percent_defected = 0
+        if times_defected > 0:
+            percent_defected = float(times_defected) / len(self.Q)
+        '''
 
         # Return most relevant analysis
-        return self.wins, percent_to_win, percent_to_cooperate
+        return self.wins, percent_won, percent_cooperated
 
     def reset_analysis(self):
         self.wins = 0
         self.losses = 0
 
 # Defined agents know which action to perform
-class Agent_Defined:
+class AgentDefined:
     def __init__(self, strategy):
         self.wins = 0 # Number of times agent has won an episode
         self.losses = 0 # Number of times agent has lost an episode
@@ -166,16 +172,16 @@ class Agent_Defined:
 
     def analyse(self):
         # What percentage of games resulted in victory/defeat
-        percent_to_win = 0
+        percent_won = 0
         if self.wins > 0:
-            percent_to_win = float(self.wins) / (self.wins + self.losses)
+            percent_won = float(self.wins) / (self.wins + self.losses)
         
-        percent_to_lose = 0
+        percent_lost = 0
         if self.losses > 0:
-            percent_to_lose = float(self.losses) / (self.wins + self.losses)
+            percent_lost = float(self.losses) / (self.wins + self.losses)
 
         # Return most relevant analysis
-        return self.wins, percent_to_win
+        return self.wins, percent_won
 
 # Stores all AIs
 population = []
@@ -190,12 +196,12 @@ mentors = []
 
 # Create a random AI with a random amount of memory
 for i in range(population_size):
-    population.append(Agent_Q(random.randint(2, 5)))
+    population.append(AgentQ(random.randint(2, 5)))
 
 # Create instances of defined strategies
 for i in range(2): # Number of defined strategies
     for j in range(mentor_instances):
-        mentors.append(Agent_Defined(i))
+        mentors.append(AgentDefined(i))
 
 # Training time initialization
 start_time = time()
@@ -218,11 +224,11 @@ while remaining_time > 0:
 
         # Analyse population
         if time() > start_time + 0.5:
-            timestep = []
+            time_step = []
             for agent in population:
-                timestep.append(agent.analyse())
+                time_step.append(agent.analyse())
                 agent.reset_analysis()
-            population_analysis.append(timestep)
+            population_analysis.append(time_step)
 
         # TODO: Analyse mentors
 
@@ -301,36 +307,58 @@ while remaining_time > 0:
 print("")
 
 # Plot analysis of AIs
-victories_percent_stack_x = []
-victories_percent_stack_y = []
-victories_percent_stack_colors = []
+victories_percent_x = []
+victories_percent_y = []
+victories_percent_colors = []
+
+victories_percent_min_y = 1.0
+victories_percent_max_y = 0.0
 
 for i in range(len(population_analysis[-1])):
-    victories_percent_stack_y.append([])
+    victories_percent_y.append([])
 
-    wins, percent_to_win, percent_to_cooperate = population_analysis[-1][i]
-    victories_percent_stack_colors.append(str(percent_to_cooperate))
+    wins, percent_won, percent_cooperated = population_analysis[-1][i]
+
+    victories_percent_colors.append(percent_cooperated)
+
+    if percent_cooperated < victories_percent_min_y:
+        victories_percent_min_y = percent_cooperated
+
+    if percent_cooperated > victories_percent_max_y:
+        victories_percent_max_y = percent_cooperated
+
+row1_colors = []
+row2_colors = []
+
+min_color = 0.05
+max_color = 0.95
+
+for color in victories_percent_colors:
+    normalized_color = (color - victories_percent_min_y) * (max_color - min_color) / (victories_percent_max_y - victories_percent_min_y) + min_color
+
+    row1_colors.append(str(color))
+    row2_colors.append(str(normalized_color))
 
 i = 0
-for timestep in population_analysis:
-    victories_percent_stack_x.append(i + 1)
+for time_step in population_analysis:
+    victories_percent_x.append(i + 1)
 
     total_wins = 0
 
-    for agent_analysis in timestep:
-        wins, percent_to_win, percent_to_cooperate = agent_analysis    
+    for agent_analysis in time_step:
+        wins, percent_won, percent_cooperated = agent_analysis
 
-        total_wins += percent_to_win
+        total_wins += percent_won
 
     j = 0
-    for agent_analysis in timestep:
-        wins, percent_to_win, percent_to_cooperate = agent_analysis
+    for agent_analysis in time_step:
+        wins, percent_won, percent_cooperated = agent_analysis
 
         victories_percent = 0
         if wins > 0:
-            victories_percent = float(percent_to_win) / total_wins
+            victories_percent = float(percent_won) / total_wins
 
-        victories_percent_stack_y[j].append(victories_percent)
+        victories_percent_y[j].append(victories_percent)
 
         j += 1
 
@@ -338,31 +366,43 @@ for timestep in population_analysis:
 
 fig = plt.figure()
 
-ax1 = fig.add_subplot(121)
+# Row 1
+ax1 = fig.add_subplot(221)
 
-ax1.stackplot(victories_percent_stack_x, victories_percent_stack_y, colors=victories_percent_stack_colors)
+ax1.stackplot(victories_percent_x, victories_percent_y, colors=row1_colors)
 
-ax2 = fig.add_subplot(122)
+ax2 = fig.add_subplot(222)
 
-for i in range(len(victories_percent_stack_y)):
-    ax2.plot(victories_percent_stack_x, victories_percent_stack_y[i], c=victories_percent_stack_colors[i], linewidth=8, alpha=0.95)
+for i in range(len(victories_percent_y)):
+    ax2.plot(victories_percent_x, victories_percent_y[i], c=row1_colors[i], linewidth=3, alpha=0.9)
+
+# Row 2
+ax3 = fig.add_subplot(223)
+
+ax3.stackplot(victories_percent_x, victories_percent_y, colors=row2_colors)
+
+ax4 = fig.add_subplot(224)
+
+for i in range(len(victories_percent_y)):
+    ax4.plot(victories_percent_x, victories_percent_y[i], c=row2_colors[i], linewidth=3, alpha=0.9)
 
 plt.show()
 
-# Testing mode with human
+# Testing mode
+wins1 = 0
+wins2 = 0
+
 while True:
     state1 = [] # State visible to player 1 (actions of player 2)
     state2 = [] # State visible to player 2 (actions of player 1)
 
     # Use a human to serve as player 1
-    player1 = Agent_Human()
+    player1 = AgentHuman()
 
     # Use a random AI to serve as player 2
     player2 = random.choice(population)
 
     for i in range(episode_length):
-        action = None
-
         action1 = player1.pick_action(state1) # Allow player 1 to pick action
         action2 = player2.pick_action(state2) # Select action for player 2
 
@@ -399,8 +439,10 @@ while True:
     # Print the winning player and score
     print("Score: " + str(total_reward1) + " to " + str(total_reward2))
     if total_reward1 > total_reward2:
-        print("You win!")
+        print("Player 1 wins!")
+        wins1 += 1
     elif total_reward2 > total_reward1:
-        print("You lose!")
+        print("Player 2 wins!")
+        wins2 += 2
     else:
         print("Tie!")
