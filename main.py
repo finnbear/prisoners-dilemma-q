@@ -1,6 +1,6 @@
 # Configuration section
 population_size = 10 # How many AIs in the population
-mentor_instances = 1 # How many instances of each defined strategy there are
+mentor_instances = 5 # How many instances of each defined strategy there are
 episode_length = 10 # How many turns to play
 dve = 0.7 # During vs. ending reward
 training_time = 1 # How long to train in seconds per agent
